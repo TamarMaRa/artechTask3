@@ -65,7 +65,10 @@ router.patch("/teams/:id", async (req, res) => {
 //delete by id
 router.delete("/teams/:id", async (req, res) => {
   try {
-    await Member.updateMany( {team: req.params.id }, {$set:{team:"not assigned"}});
+    await Member.updateMany(
+      { team: req.params.id },
+      { $set: { team: "not assigned" } },
+    );
     const team = await Team.findOneAndDelete({ _id: req.params.id });
 
     if (!team) {
@@ -92,7 +95,7 @@ router.get("/teams/head/:id", async (req, res) => {
 router.get("/teams/members/:id", async (req, res) => {
   try {
     const teams = await Team.find({ _id: req.params.id });
-    const members = await Member.find({ team: teams[0]._id})
+    const members = await Member.find({ team: teams[0]._id });
     res.send(members);
   } catch (e) {
     res.status(500).send();
@@ -103,10 +106,9 @@ router.get("/teams/members/:id", async (req, res) => {
 router.get("/teams/members/count/:id", async (req, res) => {
   try {
     const teams = await Team.find({ _id: req.params.id });
-    const members = await Member.find({ team: teams[0]._id})
+    const members = await Member.find({ team: teams[0]._id });
     res.send(`${teams[0].name} has ${members.length} teammates`);
   } catch (e) {
-    console.log(e)
     res.status(500).send();
   }
 });

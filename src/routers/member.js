@@ -18,7 +18,6 @@ router.post("/members", async (req, res) => {
     await member.save();
     res.status(201).send(member);
   } catch (e) {
-    console.log(e);
     res.status(400).send(e);
   }
 });
@@ -75,8 +74,6 @@ router.patch("/members/:id", async (req, res) => {
     await member.save();
     res.send(member);
   } catch (e) {
-    console.log(e);
-
     res.status(400).send(e);
   }
 });
