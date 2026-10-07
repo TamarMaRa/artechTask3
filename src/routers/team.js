@@ -10,17 +10,17 @@ router.post("/teams", async (req, res) => {
   try {
     await teams.save();
     res.status(201).send(teams);
-  } catch (e) {
-    res.status(400).send(e);
+  } catch (error) {
+    res.status(400).send(error);
   }
 });
 
-//read
+//read all
 router.get("/teams", async (req, res) => {
   try {
     const teams = await Team.find({});
     res.send(teams);
-  } catch (e) {
+  } catch (error) {
     res.status(500).send();
   }
 });
@@ -30,7 +30,7 @@ router.get("/teams/:id", async (req, res) => {
   try {
     const teams = await Team.find({ _id: req.params.id });
     res.send(teams);
-  } catch (e) {
+  } catch (error) {
     res.status(500).send();
   }
 });
@@ -57,12 +57,12 @@ router.patch("/teams/:id", async (req, res) => {
     updates.forEach((update) => (team[update] = req.body[update]));
     await team.save();
     res.send(team);
-  } catch (e) {
-    res.status(400).send(e);
+  } catch (error) {
+    res.status(400).send(error);
   }
 });
 
-//delete by id
+//delete
 router.delete("/teams/:id", async (req, res) => {
   try {
     await Member.updateMany(
@@ -76,7 +76,7 @@ router.delete("/teams/:id", async (req, res) => {
     }
 
     res.send(team);
-  } catch (e) {
+  } catch (error) {
     res.status(500).send();
   }
 });
@@ -86,7 +86,7 @@ router.get("/teams/head/:id", async (req, res) => {
   try {
     const teams = await Team.find({ _id: req.params.id });
     res.send(`${teams[0].head} is head of ${teams[0].name} team`);
-  } catch (e) {
+  } catch (error) {
     res.status(500).send();
   }
 });
@@ -94,21 +94,21 @@ router.get("/teams/head/:id", async (req, res) => {
 //read all team members of a team
 router.get("/teams/members/:id", async (req, res) => {
   try {
-    const teams = await Team.find({ _id: req.params.id });
-    const members = await Member.find({ team: teams[0]._id });
+    const team = await Team.find({ _id: req.params.id });
+    const members = await Member.find({ team: team[0]._id });
     res.send(members);
-  } catch (e) {
+  } catch (error) {
     res.status(500).send();
   }
 });
 
-//returns number of teammates
+//returns number of members in a team
 router.get("/teams/members/count/:id", async (req, res) => {
   try {
-    const teams = await Team.find({ _id: req.params.id });
-    const members = await Member.find({ team: teams[0]._id });
-    res.send(`${teams[0].name} has ${members.length} teammates`);
-  } catch (e) {
+    const team = await Team.find({ _id: req.params.id });
+    const members = await Member.find({ team: team[0]._id });
+    res.send(`${team[0].name} has ${members.length} members`);
+  } catch (error) {
     res.status(500).send();
   }
 });
