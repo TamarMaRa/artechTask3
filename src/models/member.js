@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const Team = require("./team");
 
-const userSchema = new mongoose.Schema({
+const memberSchema = new mongoose.Schema({
   name: {
     type: String,
     required: true,
@@ -14,7 +14,7 @@ const userSchema = new mongoose.Schema({
   },
 });
 
-userSchema.pre("save", async function (next) {
+memberSchema.pre("save", async function (next) {
   const member = this;
 
   if (member.isModified("team")) {
@@ -27,6 +27,6 @@ userSchema.pre("save", async function (next) {
   next();
 });
 
-const Member = mongoose.model("Member", userSchema);
+const Member = mongoose.model("Member", memberSchema);
 
 module.exports = Member;
