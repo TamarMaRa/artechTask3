@@ -7,8 +7,8 @@ const app = express();
 const port = process.env.PORT || 3006;
 
 app.use(express.json());
-app.use(teamRouter);
-app.use(memberRouter);
+app.use('/teams', teamRouter);
+app.use('/soldiers', memberRouter);
 
 app.listen(port, () => {
   console.log("Server is up on port " + port);

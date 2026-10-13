@@ -9,7 +9,7 @@ const memberSchema = new mongoose.Schema({
     lowercase: true,
   },
   team: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
     required: true,
   },
 });
