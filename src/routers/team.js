@@ -72,7 +72,7 @@ router.delete("/teams/:id", async (req, res) => {
     const team = await Team.findOneAndDelete({ _id: req.params.id });
 
     if (!team) {
-      res.status(404).send();
+      return res.status(404).send();
     }
 
     res.send(team);

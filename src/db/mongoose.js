@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
+const path = require("path")
+require("dotenv").config({path: path.resolve(__dirname, "../../.env")});
 
-mongoose.connect(
-  "mongodb+srv://aldubitamara_db_user:QKHqrzXegBrDtWsR@cluster0.dtz8otc.mongodb.net/artechTask3",
-  {},
-);
+const connectionString = process.env.MONGO_URI;
+
+mongoose.connect(connectionString, {});

@@ -21,7 +21,7 @@ memberSchema.pre("save", async function (next) {
     const team = await Team.findById(member.team);
 
     if (!team) {
-      res.status(404).send({ error: "team doesnt exist" });
+       return res.status(404).send({ error: "team doesnt exist" });
     }
   }
   next();

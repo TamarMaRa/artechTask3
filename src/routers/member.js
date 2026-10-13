@@ -8,7 +8,7 @@ router.post("/members", async (req, res) => {
   const team = await Team.findById(req.body.team);
 
   if (!team) {
-    res.status(404).send({ error: "team doesnt exist" });
+    return res.status(404).send({ error: "team doesnt exist" });
   }
 
   const member = new Member(req.body);
@@ -81,7 +81,7 @@ router.delete("/members/:id", async (req, res) => {
     const member = await Member.findOneAndDelete({ _id: req.params.id });
 
     if (!member) {
-      res.status(404).send();
+      return res.status(404).send();
     }
 
     res.send(member);
