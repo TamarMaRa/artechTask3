@@ -3,15 +3,21 @@ const Team = require("../models/team");
 const Member = require("../models/member");
 const router = new express.Router();
 
+//status
+const STATUSE_CREATED = 201;
+const STATUSE_BAD_REQUEST = 400;
+const STATUSE_NOT_FOUND = 404;
+const STATUSE_INTERNAL_SERVER_ERROR = 500;
+
 //create
 router.post("", async (req, res) => {
   const teams = new Team(req.body);
 
   try {
     await teams.save();
-    res.status(201).send(teams);
+    res.status(STATUSE_CREATED).send(teams);
   } catch (error) {
-    res.status(400).send({error});
+    res.status(STATUSE_BAD_REQUEST).send({ error });
   }
 });
 
@@ -21,22 +27,29 @@ router.get("", async (req, res) => {
     const teams = await Team.find({});
     res.send(teams);
   } catch (error) {
-    res.status(500).send();
+    res.status(STATUSE_INTERNAL_SERVER_ERROR).send({ error });
   }
 });
 
 //read by id
 router.get("/:id", async (req, res) => {
+  const _id = req.params.id;
   try {
-    const teams = await Team.find({ _id: req.params.id });
-    res.send(teams);
+    const team = await Team.findById(_id);
+
+    if (!team) {
+      return res.status(STATUSE_NOT_FOUND).send({ error: "Team not found" });
+    }
+
+    res.send(team);
   } catch (error) {
-    res.status(500).send();
+    res.status(STATUSE_INTERNAL_SERVER_ERROR).send({ error });
   }
 });
 
 //update
 router.patch("/:id", async (req, res) => {
+  const _id = req.params.id;
   const updates = Object.keys(req.body);
   const allowedUpdates = ["name", "head"];
   const isValidOperation = updates.every((update) =>
@@ -44,21 +57,21 @@ router.patch("/:id", async (req, res) => {
   );
 
   if (!isValidOperation) {
-    return res.status(400).send({ error: "Invalid updates!" });
+    return res.status(STATUSE_BAD_REQUEST).send({ error: "Invalid updates!" });
   }
 
   try {
-    const team = await Team.findOne({ _id: req.params.id });
+    const team = await Team.findById(_id);
 
     if (!team) {
-      return res.status(404).send();
+      return res.status(STATUSE_NOT_FOUND).send({ error: "Team not found" });
     }
 
     updates.forEach((update) => (team[update] = req.body[update]));
     await team.save();
     res.send(team);
   } catch (error) {
-    res.status(400).send({error});
+    res.status(STATUSE_BAD_REQUEST).send({ error });
   }
 });
 
@@ -72,44 +85,63 @@ router.delete("/:id", async (req, res) => {
     const team = await Team.findOneAndDelete({ _id: req.params.id });
 
     if (!team) {
-      return res.status(404).send();
+      return res.status(STATUSE_NOT_FOUND).send({ error: "Team not found" });
     }
 
     res.send(team);
   } catch (error) {
-    res.status(500).send();
+    res.status(STATUSE_INTERNAL_SERVER_ERROR).send({ error });
   }
 });
 
 //read head of team
 router.get("/head/:id", async (req, res) => {
+  const _id = req.params.id;
   try {
-    const teams = await Team.find({ _id: req.params.id });
-    res.send(`${teams[0].head} is head of ${teams[0].name} team`);
+    const team = await Team.findById(_id);
+
+    if (!team) {
+      return res.status(STATUSE_NOT_FOUND).send({ error: "Team not found" });
+    }
+
+    res.send(`${team.head} is head of ${team.name} team`);
   } catch (error) {
-    res.status(500).send();
+    res.status(STATUSE_INTERNAL_SERVER_ERROR).send({ error });
   }
 });
 
 //read all team members of a team
 router.get("/soldiers/:id", async (req, res) => {
+  const _id = req.params.id;
   try {
-    const team = await Team.find({ _id: req.params.id });
-    const members = await Member.find({ team: team[0]._id });
+    const team = await Team.findById(_id);
+
+    if (!team) {
+      return res.status(STATUSE_NOT_FOUND).send({ error: "Team not found" });
+    }
+
+    const members = await Member.find({ team: team._id });
+
     res.send(members);
   } catch (error) {
-    res.status(500).send();
+    res.status(STATUSE_INTERNAL_SERVER_ERROR).send({ error });
   }
 });
 
-//returns number of members in a team
+// //returns number of members in a team
 router.get("/soldiers/count/:id", async (req, res) => {
+  const _id = req.params.id;
   try {
-    const team = await Team.find({ _id: req.params.id });
-    const members = await Member.find({ team: team[0]._id });
-    res.send(`${team[0].name} has ${members.length} members`);
+    const team = await Team.findById(_id);
+
+    if (!team) {
+      return res.status(STATUSE_NOT_FOUND).send({ error: "Team not found" });
+    }
+
+    const soldiersCount = await Member.countDocuments({team: team._id})
+    res.send(`${team.name} has ${soldiersCount} soldiers`);
   } catch (error) {
-    res.status(500).send();
+    res.status(STATUSE_INTERNAL_SERVER_ERROR).send({ error });
   }
 });
 

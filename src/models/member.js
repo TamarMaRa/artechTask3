@@ -14,7 +14,7 @@ const memberSchema = new mongoose.Schema({
   },
 });
 
-memberSchema.pre("save", async function (next) {
+memberSchema.pre("save", async function (next, req,res) {
   const member = this;
 
   if (member.isModified("team")) {

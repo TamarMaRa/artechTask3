@@ -7,12 +7,7 @@ const teamSchema = new mongoose.Schema({
     trim: true,
     lowercase: true,
     unique: true,
-    validate(value) {
-      const teams = ["web", "pixel", "creative", "express"];
-      if (!teams.includes(value)) {
-        throw new Error("team doesn't exist");
-      }
-    },
+    enum: ["web", "pixel", "creative", "express"],
   },
   head: {
     type: String,
