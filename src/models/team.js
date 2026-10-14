@@ -10,10 +10,14 @@ const teamSchema = new mongoose.Schema({
     enum: ["web", "pixel", "creative", "express"],
   },
   head: {
-    type: String,
-    required: true,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Soldier",
     trim: true,
   },
+  soldiers: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Soldier"
+  }]
 });
 
 const Team = mongoose.model("Team", teamSchema);

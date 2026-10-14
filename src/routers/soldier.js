@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const express = require("express");
 const Soldier = require("../models/soldier");
 const Team = require("../models/team");
@@ -14,7 +15,9 @@ router.post("", async (req, res) => {
   const team = await Team.findById(req.body.team);
 
   if (!team) {
-    return res.status(statusCodes.NOT_FOUND).send({ error: "Team not found" });
+    if (team !== null) {
+      return res.status(STATUSE_NOT_FOUND).send({ error: "Team not found" });
+    }
   }
 
   const soldier = new Soldier(req.body);
@@ -57,7 +60,7 @@ router.get("/:id", async (req, res) => {
 router.patch("/:id", async (req, res) => {
   const _id = req.params.id;
   const updates = Object.keys(req.body);
-  const allowedUpdates = ["name", "team"];
+  const allowedUpdates = ["name", "email", "personalNumber", "team"];
   const isValidOperation = updates.every((update) =>
     allowedUpdates.includes(update),
   );
@@ -71,6 +74,20 @@ router.patch("/:id", async (req, res) => {
 
     if (!soldier) {
       return res.status(STATUSE_NOT_FOUND).send({ error: "Soldier not found" });
+    }
+
+    if (updates.includes("team")) {
+      const teamId = req.body.team;
+      if (!mongoose.isValidObjectId(teamId)) {
+        return res.status(STATUSE_BAD_REQUEST).send({ error: "Invalid ID" });
+      }
+
+      const team = await Team.findById(teamId);
+      if (!team) {
+        return res
+          .status(STATUSE_BAD_REQUEST)
+          .send({ error: "Team does'nt exist" });
+      }
     }
 
     updates.forEach((update) => (soldier[update] = req.body[update]));

@@ -80,7 +80,7 @@ router.delete("/:id", async (req, res) => {
   try {
     await Soldier.updateMany(
       { team: req.params.id },
-      { $set: { team: "not assigned" } },
+      { $set: { team: null } },
     );
     const team = await Team.findOneAndDelete({ _id: req.params.id });
 
