@@ -1,6 +1,6 @@
 const express = require("express");
 const Team = require("../models/team");
-const Member = require("../models/member");
+const Soldier = require("../models/soldier");
 const router = new express.Router();
 
 //status
@@ -78,7 +78,7 @@ router.patch("/:id", async (req, res) => {
 //delete
 router.delete("/:id", async (req, res) => {
   try {
-    await Member.updateMany(
+    await Soldier.updateMany(
       { team: req.params.id },
       { $set: { team: "not assigned" } },
     );
@@ -120,9 +120,9 @@ router.get("/soldiers/:id", async (req, res) => {
       return res.status(STATUSE_NOT_FOUND).send({ error: "Team not found" });
     }
 
-    const members = await Member.find({ team: team._id });
+    const soldiers = await Soldier.find({ team: team._id });
 
-    res.send(members);
+    res.send(soldiers);
   } catch (error) {
     res.status(STATUSE_INTERNAL_SERVER_ERROR).send({ error });
   }
@@ -138,7 +138,7 @@ router.get("/soldiers/count/:id", async (req, res) => {
       return res.status(STATUSE_NOT_FOUND).send({ error: "Team not found" });
     }
 
-    const soldiersCount = await Member.countDocuments({team: team._id})
+    const soldiersCount = await Soldier.countDocuments({team: team._id})
     res.send(`${team.name} has ${soldiersCount} soldiers`);
   } catch (error) {
     res.status(STATUSE_INTERNAL_SERVER_ERROR).send({ error });

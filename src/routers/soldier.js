@@ -1,5 +1,5 @@
 const express = require("express");
-const Member = require("../models/member");
+const Soldier = require("../models/soldier");
 const Team = require("../models/team");
 const router = new express.Router();
 
@@ -17,37 +17,37 @@ router.post("", async (req, res) => {
     return res.status(statusCodes.NOT_FOUND).send({ error: "Team not found" });
   }
 
-  const member = new Member(req.body);
+  const soldier = new Soldier(req.body);
 
   try {
-    await member.save();
-    res.status(STATUSE_CREATED).send(member);
+    await soldier.save();
+    res.status(STATUSE_CREATED).send(soldier);
   } catch (error) {
     res.status(STATUSE_BAD_REQUEST).send({ error });
   }
 });
 
-//get all members
+//get all soldiers
 router.get("", async (req, res) => {
   try {
-    const member = await Member.find({});
-    res.send(member);
+    const soldier = await Soldier.find({});
+    res.send(soldier);
   } catch (error) {
     res.status(STATUSE_INTERNAL_SERVER_ERROR).send({ error });
   }
 });
 
-//get member by id
+//get soldier by id
 router.get("/:id", async (req, res) => {
   const _id = req.params.id;
   try {
-    const member = await Member.findById(_id);
+    const soldier = await Soldier.findById(_id);
 
-    if (!member) {
+    if (!soldier) {
       return res.status(STATUSE_NOT_FOUND).send({ error: "Soldier not found" });
     }
 
-    res.send(member);
+    res.send(soldier);
   } catch (error) {
     res.status(STATUSE_INTERNAL_SERVER_ERROR).send({ error });
   }
@@ -67,15 +67,15 @@ router.patch("/:id", async (req, res) => {
   }
 
   try {
-    const member = await Member.findById(_id);
+    const soldier = await Soldier.findById(_id);
 
-    if (!member) {
+    if (!soldier) {
       return res.status(STATUSE_NOT_FOUND).send({ error: "Soldier not found" });
     }
 
-    updates.forEach((update) => (member[update] = req.body[update]));
-    await member.save();
-    res.send(member);
+    updates.forEach((update) => (soldier[update] = req.body[update]));
+    await soldier.save();
+    res.send(soldier);
   } catch (error) {
     res.status(STATUSE_BAD_REQUEST).send({ error });
   }
@@ -84,35 +84,35 @@ router.patch("/:id", async (req, res) => {
 //delete
 router.delete("/:id", async (req, res) => {
   try {
-    const member = await Member.findOneAndDelete({ _id: req.params.id });
+    const soldier = await Soldier.findOneAndDelete({ _id: req.params.id });
 
-    if (!member) {
+    if (!soldier) {
       return res.status(STATUSE_NOT_FOUND).send({ error: "Soldier not found" });
     }
 
-    res.send(member);
+    res.send(soldier);
   } catch (error) {
     res.status(STATUSE_INTERNAL_SERVER_ERROR).send({ error });
   }
 });
 
-//get member's team
+//get soldier's team
 router.get("/:id/team", async (req, res) => {
   const _id = req.params.id;
   try {
-    const member = await Member.findById(_id);
+    const soldier = await Soldier.findById(_id);
 
-    if (!member) {
+    if (!soldier) {
       return res.status(STATUSE_NOT_FOUND).send({ error: "Soldier not found" });
     }
 
-    const team = await Team.findById(member.team);
+    const team = await Team.findById(soldier.team);
 
     if (!team) {
-      return res.send(`${member.name} is not assigned to a team`);
+      return res.send(`${soldier.name} is not assigned to a team`);
     }
 
-    res.send(`${member.name} is in team ${team.name}`);
+    res.send(`${soldier.name} is in team ${team.name}`);
   } catch (error) {
     res.status(STATUSE_INTERNAL_SERVER_ERROR).send({ error });
   }
