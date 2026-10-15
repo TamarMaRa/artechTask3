@@ -1,4 +1,3 @@
-const mongoose = require("mongoose");
 const express = require("express");
 const Team = require("../models/team");
 const Soldier = require("../models/soldier");
@@ -16,12 +15,7 @@ router.post("", async (req, res) => {
 
   //validate team head
   if (team.head !== undefined) {
-    const headId = req.body.head;
-    if (!mongoose.isValidObjectId(headId)) {
-      return res.status(STATUSE_BAD_REQUEST).send({ error: "Invalid ID" });
-    }
-
-    const teamHead = await Soldier.findById(headId);
+    const teamHead = await Soldier.findById(req.body.head);
     if (!teamHead) {
       return res
         .status(STATUSE_BAD_REQUEST)
@@ -85,12 +79,7 @@ router.patch("/:id", async (req, res) => {
 
     //validate team head update
     if (updates.includes("head")) {
-      const headId = req.body.head;
-      if (!mongoose.isValidObjectId(headId)) {
-        return res.status(STATUSE_BAD_REQUEST).send({ error: "Invalid ID" });
-      }
-
-      const teamHead = await Soldier.findById(headId);
+      const teamHead = await Soldier.findById(req.body.head);
       if (!teamHead) {
         return res
           .status(STATUSE_BAD_REQUEST)
@@ -142,7 +131,6 @@ router.get("/head/:id", async (req, res) => {
 
     res.send(`${teamHead.name} is head of ${team.name} team`);
   } catch (error) {
-    console.log(error);
     res.status(STATUSE_INTERNAL_SERVER_ERROR).send({ error });
   }
 });

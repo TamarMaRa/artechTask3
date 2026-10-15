@@ -1,4 +1,3 @@
-const mongoose = require("mongoose");
 const express = require("express");
 const Soldier = require("../models/soldier");
 const Team = require("../models/team");
@@ -12,15 +11,14 @@ const STATUSE_INTERNAL_SERVER_ERROR = 500;
 
 //create
 router.post("", async (req, res) => {
+  const soldier = new Soldier(req.body);
   const team = await Team.findById(req.body.team);
 
   if (!team) {
-    if (team !== null) {
+    if (soldier.team !== null) {
       return res.status(STATUSE_NOT_FOUND).send({ error: "Team not found" });
     }
   }
-
-  const soldier = new Soldier(req.body);
 
   try {
     await soldier.save();
@@ -78,12 +76,7 @@ router.patch("/:id", async (req, res) => {
 
     //validate team update
     if (updates.includes("team")) {
-      const teamId = req.body.team;
-      if (!mongoose.isValidObjectId(teamId)) {
-        return res.status(STATUSE_BAD_REQUEST).send({ error: "Invalid ID" });
-      }
-
-      const team = await Team.findById(teamId);
+      const team = await Team.findById(req.body.team);
       if (!team) {
         return res
           .status(STATUSE_BAD_REQUEST)
