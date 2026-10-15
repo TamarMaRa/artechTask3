@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const express = require("express");
 const Team = require("../models/team");
 const Soldier = require("../models/soldier");
@@ -11,11 +12,26 @@ const STATUSE_INTERNAL_SERVER_ERROR = 500;
 
 //create
 router.post("", async (req, res) => {
-  const teams = new Team(req.body);
+  const team = new Team(req.body);
+
+  //validate team head
+  if (team.head !== undefined) {
+    const headId = req.body.head;
+    if (!mongoose.isValidObjectId(headId)) {
+      return res.status(STATUSE_BAD_REQUEST).send({ error: "Invalid ID" });
+    }
+
+    const teamHead = await Soldier.findById(headId);
+    if (!teamHead) {
+      return res
+        .status(STATUSE_BAD_REQUEST)
+        .send({ error: "Soldier does'nt exist" });
+    }
+  }
 
   try {
-    await teams.save();
-    res.status(STATUSE_CREATED).send(teams);
+    await team.save();
+    res.status(STATUSE_CREATED).send(team);
   } catch (error) {
     res.status(STATUSE_BAD_REQUEST).send({ error });
   }
@@ -67,6 +83,21 @@ router.patch("/:id", async (req, res) => {
       return res.status(STATUSE_NOT_FOUND).send({ error: "Team not found" });
     }
 
+    //validate team head update
+    if (updates.includes("head")) {
+      const headId = req.body.head;
+      if (!mongoose.isValidObjectId(headId)) {
+        return res.status(STATUSE_BAD_REQUEST).send({ error: "Invalid ID" });
+      }
+
+      const teamHead = await Soldier.findById(headId);
+      if (!teamHead) {
+        return res
+          .status(STATUSE_BAD_REQUEST)
+          .send({ error: "Soldier does'nt exist" });
+      }
+    }
+
     updates.forEach((update) => (team[update] = req.body[update]));
     await team.save();
     res.send(team);
@@ -78,10 +109,7 @@ router.patch("/:id", async (req, res) => {
 //delete
 router.delete("/:id", async (req, res) => {
   try {
-    await Soldier.updateMany(
-      { team: req.params.id },
-      { $set: { team: null } },
-    );
+    await Soldier.updateMany({ team: req.params.id }, { $set: { team: null } });
     const team = await Team.findOneAndDelete({ _id: req.params.id });
 
     if (!team) {
@@ -104,8 +132,17 @@ router.get("/head/:id", async (req, res) => {
       return res.status(STATUSE_NOT_FOUND).send({ error: "Team not found" });
     }
 
-    res.send(`${team.head} is head of ${team.name} team`);
+    if (team.head == null) {
+      return res
+        .status(STATUSE_NOT_FOUND)
+        .send({ error: `${team.name} doesnt have a team leader` });
+    }
+
+    const teamHead = await Soldier.findById(team.head);
+
+    res.send(`${teamHead.name} is head of ${team.name} team`);
   } catch (error) {
+    console.log(error);
     res.status(STATUSE_INTERNAL_SERVER_ERROR).send({ error });
   }
 });
@@ -138,7 +175,7 @@ router.get("/soldiers/count/:id", async (req, res) => {
       return res.status(STATUSE_NOT_FOUND).send({ error: "Team not found" });
     }
 
-    const soldiersCount = await Soldier.countDocuments({team: team._id})
+    const soldiersCount = await Soldier.countDocuments({ team: team._id });
     res.send(`${team.name} has ${soldiersCount} soldiers`);
   } catch (error) {
     res.status(STATUSE_INTERNAL_SERVER_ERROR).send({ error });

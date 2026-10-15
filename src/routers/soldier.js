@@ -76,6 +76,7 @@ router.patch("/:id", async (req, res) => {
       return res.status(STATUSE_NOT_FOUND).send({ error: "Soldier not found" });
     }
 
+    //validate team update
     if (updates.includes("team")) {
       const teamId = req.body.team;
       if (!mongoose.isValidObjectId(teamId)) {
@@ -101,6 +102,7 @@ router.patch("/:id", async (req, res) => {
 //delete
 router.delete("/:id", async (req, res) => {
   try {
+    await Team.updateMany({ head: req.params.id }, { $set: { head: null } });
     const soldier = await Soldier.findOneAndDelete({ _id: req.params.id });
 
     if (!soldier) {
