@@ -16,15 +16,12 @@ const auth = async (req, res, next) => {
     }
 
     const isHead = await Team.findOne({ head: soldier._id });
-    console.log(1)
-    console.log(isHead)
 
     req.token = token;
     req.soldier = soldier;
     req.isHead = Boolean(isHead);
     next();
   } catch (error) {
-    console.log(error);
     res.status(401).send({ error: "Please authenticate." });
   }
 };

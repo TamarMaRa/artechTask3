@@ -3,6 +3,7 @@ const Soldier = require("../models/soldier");
 const Team = require("../models/team");
 const auth = require("../middleware/auth");
 const requiredHead = require("../middleware/requiredHead");
+const { parse } = require("dotenv");
 const router = new express.Router();
 
 //status
@@ -82,6 +83,41 @@ router.get("", auth, async (req, res) => {
   }
 });
 
+//get just soldiers
+router.get("/nonHeads", auth, async (req, res) => {
+  try {
+    const teams = await Team.find({}, "head");
+    const teamHeads = teams.map((team) => team.head);
+    const soldiers = await Soldier.find({ _id: { $nin: teamHeads } });
+
+    res.send(soldiers);
+  } catch (error) {
+    res.status(STATUSE_INTERNAL_SERVER_ERROR).send({ error });
+  }
+});
+
+//get soldiers enlisted less than a year ago
+router.get("/recentSoldiers", auth, async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = 3;
+    const skip = (page - 1) * limit;
+
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)
+    const soldiers = await Soldier.find({
+      enlistmentDate: { $gt: oneYearAgo },
+    }).populate("teams").skip(skip).limit(limit);
+
+    res.send(soldiers);
+  } catch (error) {
+    console.log(1);
+    console.log(error);
+
+    res.status(STATUSE_INTERNAL_SERVER_ERROR).send({ error });
+  }
+});
+
 //get soldier by id
 router.get("/:id", auth, async (req, res) => {
   const _id = req.params.id;
@@ -102,7 +138,14 @@ router.get("/:id", auth, async (req, res) => {
 router.patch("/:id", auth, requiredHead, async (req, res) => {
   const _id = req.params.id;
   const updates = Object.keys(req.body);
-  const allowedUpdates = ["name", "email", "personalNumber", "team"];
+  const allowedUpdates = [
+    "name",
+    "email",
+    "personalNumber",
+    "team",
+    "enlistmentDate",
+    "password",
+  ];
   const isValidOperation = updates.every((update) =>
     allowedUpdates.includes(update),
   );

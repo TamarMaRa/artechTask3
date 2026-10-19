@@ -77,7 +77,6 @@ soldierSchema.methods.generateAuthToken = async function () {
     { _id: soldier._id.toString(), isHead: isHead },
     "thisismynewcourse",
   );
-
   soldier.tokens = soldier.tokens.concat({ token });
   await soldier.save();
 
