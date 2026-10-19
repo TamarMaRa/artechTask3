@@ -1,8 +1,8 @@
 const express = require("express");
-const jwt = require("jsonwebtoken");
 const Soldier = require("../models/soldier");
 const Team = require("../models/team");
 const auth = require("../middleware/auth");
+const requiredHead = require("../middleware/requiredHead");
 const router = new express.Router();
 
 //status
@@ -26,6 +26,7 @@ router.post("/login", async (req, res) => {
   }
 });
 
+//logout
 router.post("/logout", auth, async (req, res) => {
   try {
     req.soldier.tokens = req.soldier.tokens.filter((token) => {
@@ -39,8 +40,19 @@ router.post("/logout", auth, async (req, res) => {
   }
 });
 
+//logout soldier from all
+router.post("/logoutAll", auth, async (req, res) => {
+  try {
+    req.soldier.tokens = [];
+    await req.soldier.save();
+    res.send();
+  } catch (error) {
+    res.status(500).send({ error });
+  }
+});
+
 //create
-router.post("", async (req, res) => {
+router.post("", auth, requiredHead, async (req, res) => {
   const soldier = new Soldier(req.body);
   const team = await Team.findById(req.body.team);
 
@@ -87,7 +99,7 @@ router.get("/:id", auth, async (req, res) => {
 });
 
 //update
-router.patch("/:id", auth, async (req, res) => {
+router.patch("/:id", auth, requiredHead, async (req, res) => {
   const _id = req.params.id;
   const updates = Object.keys(req.body);
   const allowedUpdates = ["name", "email", "personalNumber", "team"];
@@ -125,7 +137,7 @@ router.patch("/:id", auth, async (req, res) => {
 });
 
 //delete
-router.delete("/:id", auth, async (req, res) => {
+router.delete("/:id", auth, requiredHead, async (req, res) => {
   try {
     await Team.updateMany({ head: req.params.id }, { $set: { head: null } });
     const soldier = await Soldier.findOneAndDelete({ _id: req.params.id });
@@ -141,7 +153,7 @@ router.delete("/:id", auth, async (req, res) => {
 });
 
 //get soldier's team
-router.get("/:id/team",auth, async (req, res) => {
+router.get("/:id/team", auth, async (req, res) => {
   const _id = req.params.id;
   try {
     const soldier = await Soldier.findById(_id);

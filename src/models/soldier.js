@@ -1,7 +1,8 @@
 const mongoose = require("mongoose");
 const validator = require("validator");
-const jwt = require('jsonwebtoken')
+const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
+const Team = require("./team");
 
 const soldierSchema = new mongoose.Schema({
   name: {
@@ -71,7 +72,11 @@ soldierSchema.methods.toJSON = function () {
 
 soldierSchema.methods.generateAuthToken = async function () {
   const soldier = this;
-  const token = jwt.sign({ _id: soldier._id.toString() }, "thisismynewcourse");
+  const isHead = await Team.findOne({ head: soldier._id });
+  const token = jwt.sign(
+    { _id: soldier._id.toString(), isHead: isHead },
+    "thisismynewcourse",
+  );
 
   soldier.tokens = soldier.tokens.concat({ token });
   await soldier.save();

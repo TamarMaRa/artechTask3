@@ -2,6 +2,7 @@ const express = require("express");
 const Team = require("../models/team");
 const Soldier = require("../models/soldier");
 const auth = require("../middleware/auth");
+const requiredHead = require("../middleware/requiredHead");
 const router = new express.Router();
 
 //status
@@ -11,7 +12,7 @@ const STATUSE_NOT_FOUND = 404;
 const STATUSE_INTERNAL_SERVER_ERROR = 500;
 
 //create
-router.post("", auth, async (req, res) => {
+router.post("", auth, requiredHead, async (req, res) => {
   const team = new Team(req.body);
 
   //validate team head
@@ -59,7 +60,7 @@ router.get("/:id", auth, async (req, res) => {
 });
 
 //update
-router.patch("/:id", auth, async (req, res) => {
+router.patch("/:id", auth, requiredHead, async (req, res) => {
   const _id = req.params.id;
   const updates = Object.keys(req.body);
   const allowedUpdates = ["name", "head"];
@@ -97,7 +98,7 @@ router.patch("/:id", auth, async (req, res) => {
 });
 
 //delete
-router.delete("/:id", auth, async (req, res) => {
+router.delete("/:id", auth, requiredHead, async (req, res) => {
   try {
     await Soldier.updateMany({ team: req.params.id }, { $set: { team: null } });
     const team = await Team.findOneAndDelete({ _id: req.params.id });
