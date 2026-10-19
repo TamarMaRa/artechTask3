@@ -1,6 +1,7 @@
 const express = require("express");
 const Team = require("../models/team");
 const Soldier = require("../models/soldier");
+const auth = require("../middleware/auth");
 const router = new express.Router();
 
 //status
@@ -10,7 +11,7 @@ const STATUSE_NOT_FOUND = 404;
 const STATUSE_INTERNAL_SERVER_ERROR = 500;
 
 //create
-router.post("", async (req, res) => {
+router.post("", auth, async (req, res) => {
   const team = new Team(req.body);
 
   //validate team head
@@ -32,7 +33,7 @@ router.post("", async (req, res) => {
 });
 
 //read all
-router.get("", async (req, res) => {
+router.get("", auth, async (req, res) => {
   try {
     const teams = await Team.find({});
     res.send(teams);
@@ -42,7 +43,7 @@ router.get("", async (req, res) => {
 });
 
 //read by id
-router.get("/:id", async (req, res) => {
+router.get("/:id", auth, async (req, res) => {
   const _id = req.params.id;
   try {
     const team = await Team.findById(_id);
@@ -58,7 +59,7 @@ router.get("/:id", async (req, res) => {
 });
 
 //update
-router.patch("/:id", async (req, res) => {
+router.patch("/:id", auth, async (req, res) => {
   const _id = req.params.id;
   const updates = Object.keys(req.body);
   const allowedUpdates = ["name", "head"];
@@ -96,7 +97,7 @@ router.patch("/:id", async (req, res) => {
 });
 
 //delete
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", auth, async (req, res) => {
   try {
     await Soldier.updateMany({ team: req.params.id }, { $set: { team: null } });
     const team = await Team.findOneAndDelete({ _id: req.params.id });
@@ -112,7 +113,7 @@ router.delete("/:id", async (req, res) => {
 });
 
 //read head of team
-router.get("/head/:id", async (req, res) => {
+router.get("/head/:id", auth, async (req, res) => {
   const _id = req.params.id;
   try {
     const team = await Team.findById(_id);
@@ -136,7 +137,7 @@ router.get("/head/:id", async (req, res) => {
 });
 
 //read all team members of a team
-router.get("/soldiers/:id", async (req, res) => {
+router.get("/soldiers/:id", auth, async (req, res) => {
   const _id = req.params.id;
   try {
     const team = await Team.findById(_id);
@@ -154,7 +155,7 @@ router.get("/soldiers/:id", async (req, res) => {
 });
 
 // //returns number of members in a team
-router.get("/soldiers/count/:id", async (req, res) => {
+router.get("/soldiers/count/:id", auth, async (req, res) => {
   const _id = req.params.id;
   try {
     const team = await Team.findById(_id);

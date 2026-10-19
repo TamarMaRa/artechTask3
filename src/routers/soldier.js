@@ -1,6 +1,8 @@
 const express = require("express");
+const jwt = require("jsonwebtoken");
 const Soldier = require("../models/soldier");
 const Team = require("../models/team");
+const auth = require("../middleware/auth");
 const router = new express.Router();
 
 //status
@@ -8,6 +10,34 @@ const STATUSE_CREATED = 201;
 const STATUSE_BAD_REQUEST = 400;
 const STATUSE_NOT_FOUND = 404;
 const STATUSE_INTERNAL_SERVER_ERROR = 500;
+
+//authentication functions
+//login
+router.post("/login", async (req, res) => {
+  try {
+    const soldier = await Soldier.findByCredentials(
+      req.body.email,
+      req.body.password,
+    );
+    const token = await soldier.generateAuthToken();
+    res.send({ soldier, token });
+  } catch (error) {
+    res.status(STATUSE_BAD_REQUEST).send({ error: "incorrect credentials" });
+  }
+});
+
+router.post("/logout", auth, async (req, res) => {
+  try {
+    req.soldier.tokens = req.soldier.tokens.filter((token) => {
+      return token.token !== req.token;
+    });
+    await req.soldier.save();
+
+    res.send();
+  } catch (error) {
+    res.status(STATUSE_INTERNAL_SERVER_ERROR).send({ error });
+  }
+});
 
 //create
 router.post("", async (req, res) => {
@@ -22,14 +52,16 @@ router.post("", async (req, res) => {
 
   try {
     await soldier.save();
-    res.status(STATUSE_CREATED).send(soldier);
+    const token = await soldier.generateAuthToken();
+    res.status(STATUSE_CREATED).send({ soldier, token });
   } catch (error) {
+    console.log(error);
     res.status(STATUSE_BAD_REQUEST).send({ error });
   }
 });
 
 //get all soldiers
-router.get("", async (req, res) => {
+router.get("", auth, async (req, res) => {
   try {
     const soldier = await Soldier.find({});
     res.send(soldier);
@@ -39,7 +71,7 @@ router.get("", async (req, res) => {
 });
 
 //get soldier by id
-router.get("/:id", async (req, res) => {
+router.get("/:id", auth, async (req, res) => {
   const _id = req.params.id;
   try {
     const soldier = await Soldier.findById(_id);
@@ -55,7 +87,7 @@ router.get("/:id", async (req, res) => {
 });
 
 //update
-router.patch("/:id", async (req, res) => {
+router.patch("/:id", auth, async (req, res) => {
   const _id = req.params.id;
   const updates = Object.keys(req.body);
   const allowedUpdates = ["name", "email", "personalNumber", "team"];
@@ -93,7 +125,7 @@ router.patch("/:id", async (req, res) => {
 });
 
 //delete
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", auth, async (req, res) => {
   try {
     await Team.updateMany({ head: req.params.id }, { $set: { head: null } });
     const soldier = await Soldier.findOneAndDelete({ _id: req.params.id });
@@ -109,7 +141,7 @@ router.delete("/:id", async (req, res) => {
 });
 
 //get soldier's team
-router.get("/:id/team", async (req, res) => {
+router.get("/:id/team",auth, async (req, res) => {
   const _id = req.params.id;
   try {
     const soldier = await Soldier.findById(_id);
