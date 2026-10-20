@@ -82,14 +82,15 @@ router.get("", auth, async (req, res) => {
   }
 });
 
-//get just soldiers
+//get just soldiers names
 router.get("/nonHeads", auth, async (req, res) => {
   try {
     const teams = await Team.find({}, "head");
     const teamHeads = teams.map((team) => team.head);
     const soldiers = await Soldier.find({ _id: { $nin: teamHeads } });
+    const soldiersNames = soldiers.map((soldier) => soldier.name);
 
-    res.send(soldiers);
+    res.send(soldiersNames);
   } catch (error) {
     res.status(STATUSE_INTERNAL_SERVER_ERROR).send({ error });
   }
@@ -111,15 +112,19 @@ router.get("/recentSoldiers", auth, async (req, res) => {
       .skip(skip)
       .limit(limit);
 
+    if (!soldiers) {
+      return res.status(STATUSE_NOT_FOUND).send({ error: "No soldiers found" });
+    }
+
     res.send(soldiers);
   } catch (error) {
     res.status(STATUSE_INTERNAL_SERVER_ERROR).send({ error });
   }
 });
 
-//get and sort just soldiers
-//GET /sortNonHeads?sortBy=enlistmentDate:desc(-1) or esc(1)
-router.get("/sortNonHeads", auth, async (req, res) => {
+//get and sort soldiers by enlistment date
+//GET /sortPazam?sortBy=enlistmentDate:desc(-1) or asc(1)
+router.get("/sortByPazam", auth, async (req, res) => {
   const sortOrder = {};
 
   try {
@@ -128,11 +133,11 @@ router.get("/sortNonHeads", auth, async (req, res) => {
       sortOrder[parts[0]] = parts[1] === "desc" ? -1 : 1;
     }
 
-    const teams = await Team.find({}, "head");
-    const teamHeads = teams.map((team) => team.head);
-    const soldiers = await Soldier.find({ _id: { $nin: teamHeads } }).sort(
-      sortOrder,
-    );
+    const soldiers = await Soldier.find({}).sort(sortOrder);
+
+    if (!soldiers) {
+      return res.status(STATUSE_NOT_FOUND).send({ error: "No soldiers found" });
+    }
 
     res.send(soldiers);
   } catch (error) {
@@ -140,24 +145,41 @@ router.get("/sortNonHeads", auth, async (req, res) => {
   }
 });
 
-//get and sort just team heads
-//GET /sortTeamHeads?sortBy=enlistmentDate:desc(-1) or esc(1)
-router.get("/sortTeamHeads", auth, async (req, res) => {
-  const sortOrder = {};
+//get and sort just team heads by team size
+//GET /headsByTeamSize?sortBy=order:desc(-1) or asc(1)
+router.get("/headsByTeamSize", auth, async (req, res) => {
+  let sortOrder = {};
 
   try {
-    if (req.query.sortBy) {
-      const parts = req.query.sortBy.split(":");
-      sortOrder[parts[0]] = parts[1] === "desc" ? -1 : 1;
+    const results = [];
+    const teams = await Team.find({}).populate("head");
+
+    if (!teams) {
+      return res.status(STATUSE_NOT_FOUND).send({ error: "No teams found" });
     }
 
-    const teams = await Team.find({}, "head");
-    const teamHeads = teams.map((team) => team.head);
-    const soldiers = await Soldier.find({ _id: teamHeads }).sort(
-      sortOrder,
-    );
+    for (let i = 0; i < teams.length; i++) {
+      if (teams[i].head) {
+        let count = await Soldier.countDocuments({ team: teams[i]._id });
+        results.push({
+          head: teams[i].head,
+          soldierCount: count,
+        });
+      }
+    }
 
-    res.send(soldiers);
+    if (req.query.sortBy) {
+      sortOrder = req.query.sortBy.split(":");
+
+      if (sortOrder[1] === "asc") {
+        results.sort((a, b) => a.soldierCount - b.soldierCount);
+      } else if (sortOrder[1] === "desc") {
+        results.sort((a, b) => b.soldierCount - a.soldierCount);
+      }
+    }
+
+    const heads = results.map((item) => item.head);
+    res.send(heads);
   } catch (error) {
     res.status(STATUSE_INTERNAL_SERVER_ERROR).send({ error });
   }
