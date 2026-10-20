@@ -140,7 +140,6 @@ router.get("/sortNonHeads", auth, async (req, res) => {
   }
 });
 
-
 //get and sort just team heads
 //GET /sortTeamHeads?sortBy=enlistmentDate:desc(-1) or esc(1)
 router.get("/sortTeamHeads", auth, async (req, res) => {
