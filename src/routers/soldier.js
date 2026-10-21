@@ -3,14 +3,13 @@ const Soldier = require("../models/soldier");
 const Team = require("../models/team");
 const auth = require("../middleware/auth");
 const requiredHead = require("../middleware/requiredHead");
-const { parse } = require("dotenv");
 const router = new express.Router();
 
 //status
-const STATUSE_CREATED = 201;
-const STATUSE_BAD_REQUEST = 400;
-const STATUSE_NOT_FOUND = 404;
-const STATUSE_INTERNAL_SERVER_ERROR = 500;
+const STATUS_CREATED = 201;
+const STATUS_BAD_REQUEST = 400;
+const STATUS_NOT_FOUND = 404;
+const STATUS_INTERNAL_SERVER_ERROR = 500;
 
 //authentication functions
 //login
@@ -23,7 +22,7 @@ router.post("/login", async (req, res) => {
     const token = await soldier.generateAuthToken();
     res.send({ soldier, token });
   } catch (error) {
-    res.status(STATUSE_BAD_REQUEST).send({ error: "incorrect credentials" });
+    res.status(STATUS_BAD_REQUEST).send({ error: "incorrect credentials" });
   }
 });
 
@@ -37,7 +36,7 @@ router.post("/logout", auth, async (req, res) => {
 
     res.send();
   } catch (error) {
-    res.status(STATUSE_INTERNAL_SERVER_ERROR).send({ error });
+    res.status(STATUS_INTERNAL_SERVER_ERROR).send({ error });
   }
 });
 
@@ -59,16 +58,16 @@ router.post("", auth, requiredHead, async (req, res) => {
 
   if (!team) {
     if (soldier.team !== null) {
-      return res.status(STATUSE_NOT_FOUND).send({ error: "Team not found" });
+      return res.status(STATUS_NOT_FOUND).send({ error: "Team not found" });
     }
   }
 
   try {
     await soldier.save();
     const token = await soldier.generateAuthToken();
-    res.status(STATUSE_CREATED).send({ soldier, token });
+    res.status(STATUS_CREATED).send({ soldier, token });
   } catch (error) {
-    res.status(STATUSE_BAD_REQUEST).send({ error });
+    res.status(STATUS_BAD_REQUEST).send({ error });
   }
 });
 
@@ -78,7 +77,7 @@ router.get("", auth, async (req, res) => {
     const soldier = await Soldier.find({});
     res.send(soldier);
   } catch (error) {
-    res.status(STATUSE_INTERNAL_SERVER_ERROR).send({ error });
+    res.status(STATUS_INTERNAL_SERVER_ERROR).send({ error });
   }
 });
 
@@ -88,11 +87,15 @@ router.get("/nonHeads", auth, async (req, res) => {
     const teams = await Team.find({}, "head");
     const teamHeads = teams.map((team) => team.head);
     const soldiers = await Soldier.find({ _id: { $nin: teamHeads } });
-    const soldiersNames = soldiers.map((soldier) => soldier.name);
 
+    if (!soldiers) {
+      return res.status(STATUS_NOT_FOUND).send({ error: "No soldiers found" });
+    }
+
+    const soldiersNames = soldiers.map((soldier) => soldier.name);
     res.send(soldiersNames);
   } catch (error) {
-    res.status(STATUSE_INTERNAL_SERVER_ERROR).send({ error });
+    res.status(STATUS_INTERNAL_SERVER_ERROR).send({ error });
   }
 });
 
@@ -113,12 +116,12 @@ router.get("/recentSoldiers", auth, async (req, res) => {
       .limit(limit);
 
     if (!soldiers) {
-      return res.status(STATUSE_NOT_FOUND).send({ error: "No soldiers found" });
+      return res.status(STATUS_NOT_FOUND).send({ error: "No soldiers found" });
     }
 
     res.send(soldiers);
   } catch (error) {
-    res.status(STATUSE_INTERNAL_SERVER_ERROR).send({ error });
+    res.status(STATUS_INTERNAL_SERVER_ERROR).send({ error });
   }
 });
 
@@ -136,12 +139,12 @@ router.get("/sortByPazam", auth, async (req, res) => {
     const soldiers = await Soldier.find({}).sort(sortOrder);
 
     if (!soldiers) {
-      return res.status(STATUSE_NOT_FOUND).send({ error: "No soldiers found" });
+      return res.status(STATUS_NOT_FOUND).send({ error: "No soldiers found" });
     }
 
     res.send(soldiers);
   } catch (error) {
-    res.status(STATUSE_INTERNAL_SERVER_ERROR).send({ error });
+    res.status(STATUS_INTERNAL_SERVER_ERROR).send({ error });
   }
 });
 
@@ -155,7 +158,7 @@ router.get("/headsByTeamSize", auth, async (req, res) => {
     const teams = await Team.find({}).populate("head");
 
     if (!teams) {
-      return res.status(STATUSE_NOT_FOUND).send({ error: "No teams found" });
+      return res.status(STATUS_NOT_FOUND).send({ error: "No teams found" });
     }
 
     for (let i = 0; i < teams.length; i++) {
@@ -173,7 +176,7 @@ router.get("/headsByTeamSize", auth, async (req, res) => {
 
       if (sortOrder[1] === "asc") {
         results.sort((a, b) => a.soldierCount - b.soldierCount);
-      } else if (sortOrder[1] === "desc") {
+      } else {
         results.sort((a, b) => b.soldierCount - a.soldierCount);
       }
     }
@@ -181,7 +184,7 @@ router.get("/headsByTeamSize", auth, async (req, res) => {
     const heads = results.map((item) => item.head);
     res.send(heads);
   } catch (error) {
-    res.status(STATUSE_INTERNAL_SERVER_ERROR).send({ error });
+    res.status(STATUS_INTERNAL_SERVER_ERROR).send({ error });
   }
 });
 
@@ -192,12 +195,12 @@ router.get("/:id", auth, async (req, res) => {
     const soldier = await Soldier.findById(_id);
 
     if (!soldier) {
-      return res.status(STATUSE_NOT_FOUND).send({ error: "Soldier not found" });
+      return res.status(STATUS_NOT_FOUND).send({ error: "Soldier not found" });
     }
 
     res.send(soldier);
   } catch (error) {
-    res.status(STATUSE_INTERNAL_SERVER_ERROR).send({ error });
+    res.status(STATUS_INTERNAL_SERVER_ERROR).send({ error });
   }
 });
 
@@ -218,14 +221,14 @@ router.patch("/:id", auth, requiredHead, async (req, res) => {
   );
 
   if (!isValidOperation) {
-    return res.status(STATUSE_BAD_REQUEST).send({ error: "Invalid updates!" });
+    return res.status(STATUS_BAD_REQUEST).send({ error: "Invalid updates!" });
   }
 
   try {
     const soldier = await Soldier.findById(_id);
 
     if (!soldier) {
-      return res.status(STATUSE_NOT_FOUND).send({ error: "Soldier not found" });
+      return res.status(STATUS_NOT_FOUND).send({ error: "Soldier not found" });
     }
 
     //validate team update
@@ -233,7 +236,7 @@ router.patch("/:id", auth, requiredHead, async (req, res) => {
       const team = await Team.findById(req.body.team);
       if (!team) {
         return res
-          .status(STATUSE_BAD_REQUEST)
+          .status(STATUS_BAD_REQUEST)
           .send({ error: "Team does'nt exist" });
       }
     }
@@ -242,7 +245,7 @@ router.patch("/:id", auth, requiredHead, async (req, res) => {
     await soldier.save();
     res.send(soldier);
   } catch (error) {
-    res.status(STATUSE_BAD_REQUEST).send({ error });
+    res.status(STATUS_BAD_REQUEST).send({ error });
   }
 });
 
@@ -253,12 +256,12 @@ router.delete("/:id", auth, requiredHead, async (req, res) => {
     const soldier = await Soldier.findOneAndDelete({ _id: req.params.id });
 
     if (!soldier) {
-      return res.status(STATUSE_NOT_FOUND).send({ error: "Soldier not found" });
+      return res.status(STATUS_NOT_FOUND).send({ error: "Soldier not found" });
     }
 
     res.send(soldier);
   } catch (error) {
-    res.status(STATUSE_INTERNAL_SERVER_ERROR).send({ error });
+    res.status(STATUS_INTERNAL_SERVER_ERROR).send({ error });
   }
 });
 
@@ -269,7 +272,7 @@ router.get("/:id/team", auth, async (req, res) => {
     const soldier = await Soldier.findById(_id);
 
     if (!soldier) {
-      return res.status(STATUSE_NOT_FOUND).send({ error: "Soldier not found" });
+      return res.status(STATUS_NOT_FOUND).send({ error: "Soldier not found" });
     }
 
     const team = await Team.findById(soldier.team);
@@ -280,7 +283,7 @@ router.get("/:id/team", auth, async (req, res) => {
 
     res.send(`${soldier.name} is in team ${team.name}`);
   } catch (error) {
-    res.status(STATUSE_INTERNAL_SERVER_ERROR).send({ error });
+    res.status(STATUS_INTERNAL_SERVER_ERROR).send({ error });
   }
 });
 
