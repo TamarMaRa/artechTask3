@@ -4,6 +4,10 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const Team = require("./team");
 
+require("dotenv").config();
+const bearer_token = process.env.BEARER_TOKEN;
+
+
 const soldierSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -31,7 +35,6 @@ const soldierSchema = new mongoose.Schema({
   },
   team: {
     type: mongoose.Schema.Types.ObjectId,
-    default: null,
     ref: "Team",
   },
   enlistmentDate: {
@@ -75,7 +78,7 @@ soldierSchema.methods.generateAuthToken = async function () {
   const isHead = await Team.findOne({ head: soldier._id });
   const token = jwt.sign(
     { _id: soldier._id.toString(), isHead: isHead },
-    "thisismynewcourse",
+    bearer_token,
   );
   soldier.tokens = soldier.tokens.concat({ token });
   await soldier.save();

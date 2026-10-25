@@ -5,11 +5,12 @@ const auth = require("../middleware/auth");
 const requiredHead = require("../middleware/requiredHead");
 const router = new express.Router();
 
-//status
-const STATUS_CREATED = 201;
-const STATUS_BAD_REQUEST = 400;
-const STATUS_NOT_FOUND = 404;
-const STATUS_INTERNAL_SERVER_ERROR = 500;
+const {
+  STATUS_CREATED,
+  STATUS_BAD_REQUEST,
+  STATUS_NOT_FOUND,
+  STATUS_INTERNAL_SERVER_ERROR,
+} = require("../status");
 
 //authentication functions
 //login
@@ -47,7 +48,7 @@ router.post("/logoutAll", auth, async (req, res) => {
     await req.soldier.save();
     res.send();
   } catch (error) {
-    res.status(500).send({ error });
+    res.status(STATUS_INTERNAL_SERVER_ERROR).send({ error });
   }
 });
 
@@ -56,10 +57,8 @@ router.post("", auth, requiredHead, async (req, res) => {
   const soldier = new Soldier(req.body);
   const team = await Team.findById(req.body.team);
 
-  if (!team) {
-    if (soldier.team !== null) {
-      return res.status(STATUS_NOT_FOUND).send({ error: "Team not found" });
-    }
+  if (!team && soldier.team !== null) {
+    return res.status(STATUS_NOT_FOUND).send({ error: "Team not found" });
   }
 
   try {
@@ -84,16 +83,19 @@ router.get("", auth, async (req, res) => {
 //get just soldiers names
 router.get("/nonHeads", auth, async (req, res) => {
   try {
-    const teams = await Team.find({}, "head");
+    // const teams = await Team.find({}).select("head");
+    // const teamHeads = teams.map((team) => team.head);
+    // console.log(teamHeads)
+    // const soldiers = await Soldier.find({ _id: { $nin: teamHeads } }).select("name");
+    const teams = await Team.find({}).select("head");
     const teamHeads = teams.map((team) => team.head);
-    const soldiers = await Soldier.find({ _id: { $nin: teamHeads } });
+    const soldiers = await Soldier.find({ _id: { $nin: teamHeads } }).select("name");
 
     if (!soldiers) {
       return res.status(STATUS_NOT_FOUND).send({ error: "No soldiers found" });
-    }
+    } 
 
-    const soldiersNames = soldiers.map((soldier) => soldier.name);
-    res.send(soldiersNames);
+    res.send(soldiers);
   } catch (error) {
     res.status(STATUS_INTERNAL_SERVER_ERROR).send({ error });
   }
@@ -111,7 +113,7 @@ router.get("/recentSoldiers", auth, async (req, res) => {
     const soldiers = await Soldier.find({
       enlistmentDate: { $gt: oneYearAgo },
     })
-      .populate("teams")
+      .populate("team")
       .skip(skip)
       .limit(limit);
 

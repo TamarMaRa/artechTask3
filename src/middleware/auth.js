@@ -2,10 +2,13 @@ const jwt = require("jsonwebtoken");
 const Soldier = require("../models/soldier");
 const Team = require("../models/team");
 
+require("dotenv").config();
+const bearer_token = process.env.BEARER_TOKEN;
+
 const auth = async (req, res, next) => {
   try {
     const token = req.header("Authorization").replace("Bearer ", "");
-    const decoded = jwt.verify(token, "thisismynewcourse");
+    const decoded = jwt.verify(token, bearer_token);
     const soldier = await Soldier.findOne({
       _id: decoded._id,
       "tokens.token": token,
