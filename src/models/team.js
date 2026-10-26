@@ -15,10 +15,6 @@ const teamSchema = new mongoose.Schema({
     ref: "Soldier",
     trim: true,
   },
-  soldiers: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Soldier"
-  }]
 });
 
 //validate team head before saving

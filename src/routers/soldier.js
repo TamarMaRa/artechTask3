@@ -92,7 +92,6 @@ router.get("", auth, async (req, res) => {
 
     res.send(soldiers);
   } catch (error) {
-    console.log(error);
     res.status(STATUS_INTERNAL_SERVER_ERROR).send({ error });
   }
 });
@@ -142,41 +141,67 @@ router.get("/recentSoldiers", auth, async (req, res) => {
   }
 });
 
-//get and sort just team heads by team size
-//GET /headsByTeamSize?sortBy=order:desc(-1) or asc(1)
 router.get("/headsByTeamSize", auth, async (req, res) => {
-  let sortOrder = {};
+  let sortOrder = -1;
+
+  if (req.query.sortBy) {
+    const sortBy = req.query.sortBy.split(":");
+
+    if (sortBy[1] === "asc") {
+      sortOrder = 1;
+    }
+  }
 
   try {
-    const results = [];
-    const teams = await Team.find({}).populate("head");
+    const heads = await Team.aggregate([
+      {
+        $match: {
+          head: { $ne: null },
+        },
+      },
+      {
+        $lookup: {
+          from: Soldier.collection.name,
+          localField: "_id",
+          foreignField: "team",
+          as: "soldiers",
+        },
+      },
+      {
+        $addFields: {
+          soldierCount: { $size: "$soldiers" },
+        },
+      },
+      {
+        $sort: {
+          soldierCount: sortOrder,
+        },
+      },
+      {
+        $lookup: {
+          from: Soldier.collection.name,
+          localField: "head",
+          foreignField: "_id",
+          as: "headSoldier",
+        },
+      },
+      {
+        $unwind: "$headSoldier",
+      },
+      {
+        $replaceRoot: {
+          newRoot: "$headSoldier",
+        },
+      },
+    ]);
 
-    if (!teams) {
-      return res.status(STATUS_NOT_FOUND).send({ error: "No teams found" });
+    if (!heads) {
+      return res
+        .status(STATUS_NOT_FOUND)
+        .send({ error: "No team heads found" });
     }
 
-    for (let i = 0; i < teams.length; i++) {
-      if (teams[i].head) {
-        let count = await Soldier.countDocuments({ team: teams[i]._id });
-        results.push({
-          head: teams[i].head,
-          soldierCount: count,
-        });
-      }
-    }
-
-    if (req.query.sortBy) {
-      sortOrder = req.query.sortBy.split(":");
-
-      if (sortOrder[1] === "asc") {
-        results.sort((a, b) => a.soldierCount - b.soldierCount);
-      } else {
-        results.sort((a, b) => b.soldierCount - a.soldierCount);
-      }
-    }
-
-    const heads = results.map((item) => item.head);
-    res.send(heads);
+    res.status(200).send(heads);
   } catch (error) {
     res.status(STATUS_INTERNAL_SERVER_ERROR).send({ error });
   }
@@ -229,8 +254,6 @@ router.patch("/:id", auth, requiredHead, async (req, res) => {
     await soldier.save();
     res.send(soldier);
   } catch (error) {
-    console.log(1);
-    console.log(error);
     res.status(STATUS_BAD_REQUEST).send({ error });
   }
 });

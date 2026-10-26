@@ -20,8 +20,6 @@ router.post("", auth, requiredHead, async (req, res) => {
     await team.save();
     res.status(STATUS_CREATED).send(team);
   } catch (error) {
-    console.log(1);
-    console.log(error);
     res.status(STATUS_BAD_REQUEST).send({ error });
   }
 });
