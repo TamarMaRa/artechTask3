@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const Soldier = require("./soldier");
 
 const teamSchema = new mongoose.Schema({
   name: {
@@ -18,6 +19,19 @@ const teamSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Soldier"
   }]
+});
+
+//validate team head before saving
+teamSchema.pre("save", async function (next) {
+  const team = this;
+
+  if(team.isModified("head")) {
+    const head = await Soldier.findById(team.head);
+    if(!head) {
+      throw new Error("Soldier doesn't exists")
+    }
+  }
+  next();
 });
 
 const Team = mongoose.model("Team", teamSchema);

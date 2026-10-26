@@ -103,11 +103,19 @@ soldierSchema.statics.findByCredentials = async (email, password) => {
 };
 
 // Hash the plain text password before saving
+//validate soldier's team before saving
 soldierSchema.pre("save", async function (next) {
   const soldier = this;
 
   if (soldier.isModified("password")) {
     soldier.password = await bcrypt.hash(soldier.password, 8);
+  }
+
+  if(soldier.isModified("team")) {
+    const team = await Team.findById(soldier.team);
+    if(!team) {
+      throw new Error("Team doesn't exists")
+    }
   }
   next();
 });

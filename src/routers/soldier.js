@@ -55,10 +55,12 @@ router.post("/logoutAll", auth, async (req, res) => {
 //create
 router.post("", auth, requiredHead, async (req, res) => {
   const soldier = new Soldier(req.body);
-  const team = await Team.findById(req.body.team);
 
-  if (!team && soldier.team !== null) {
-    return res.status(STATUS_NOT_FOUND).send({ error: "Team not found" });
+  if (soldier.team !== undefined) {
+    const team = await Team.findById(req.body.team);
+    if (!team) {
+      return res.status(STATUS_NOT_FOUND).send({ error: "Team not found" });
+    }
   }
 
   try {
@@ -71,11 +73,26 @@ router.post("", auth, requiredHead, async (req, res) => {
 });
 
 //get all soldiers
+//sort soldiers by enlistment date
+//GET ?sortBy=enlistmentDate:desc(-1) or asc(1)
 router.get("", auth, async (req, res) => {
+  const sortOrder = {};
+
   try {
-    const soldier = await Soldier.find({});
-    res.send(soldier);
+    if (req.query.sortBy) {
+      const parts = req.query.sortBy.split(":");
+      sortOrder[parts[0]] = parts[1] === "desc" ? -1 : 1;
+    }
+
+    const soldiers = await Soldier.find({}).sort(sortOrder);
+
+    if (!soldiers) {
+      return res.status(STATUS_NOT_FOUND).send({ error: "No soldiers found" });
+    }
+
+    res.send(soldiers);
   } catch (error) {
+    console.log(error);
     res.status(STATUS_INTERNAL_SERVER_ERROR).send({ error });
   }
 });
@@ -83,17 +100,15 @@ router.get("", auth, async (req, res) => {
 //get just soldiers names
 router.get("/nonHeads", auth, async (req, res) => {
   try {
-    // const teams = await Team.find({}).select("head");
-    // const teamHeads = teams.map((team) => team.head);
-    // console.log(teamHeads)
-    // const soldiers = await Soldier.find({ _id: { $nin: teamHeads } }).select("name");
     const teams = await Team.find({}).select("head");
     const teamHeads = teams.map((team) => team.head);
-    const soldiers = await Soldier.find({ _id: { $nin: teamHeads } }).select("name");
+    const soldiers = await Soldier.find({ _id: { $nin: teamHeads } }).select(
+      "name",
+    );
 
     if (!soldiers) {
       return res.status(STATUS_NOT_FOUND).send({ error: "No soldiers found" });
-    } 
+    }
 
     res.send(soldiers);
   } catch (error) {
@@ -116,29 +131,6 @@ router.get("/recentSoldiers", auth, async (req, res) => {
       .populate("team")
       .skip(skip)
       .limit(limit);
-
-    if (!soldiers) {
-      return res.status(STATUS_NOT_FOUND).send({ error: "No soldiers found" });
-    }
-
-    res.send(soldiers);
-  } catch (error) {
-    res.status(STATUS_INTERNAL_SERVER_ERROR).send({ error });
-  }
-});
-
-//get and sort soldiers by enlistment date
-//GET /sortPazam?sortBy=enlistmentDate:desc(-1) or asc(1)
-router.get("/sortByPazam", auth, async (req, res) => {
-  const sortOrder = {};
-
-  try {
-    if (req.query.sortBy) {
-      const parts = req.query.sortBy.split(":");
-      sortOrder[parts[0]] = parts[1] === "desc" ? -1 : 1;
-    }
-
-    const soldiers = await Soldier.find({}).sort(sortOrder);
 
     if (!soldiers) {
       return res.status(STATUS_NOT_FOUND).send({ error: "No soldiers found" });
@@ -233,20 +225,12 @@ router.patch("/:id", auth, requiredHead, async (req, res) => {
       return res.status(STATUS_NOT_FOUND).send({ error: "Soldier not found" });
     }
 
-    //validate team update
-    if (updates.includes("team")) {
-      const team = await Team.findById(req.body.team);
-      if (!team) {
-        return res
-          .status(STATUS_BAD_REQUEST)
-          .send({ error: "Team does'nt exist" });
-      }
-    }
-
     updates.forEach((update) => (soldier[update] = req.body[update]));
     await soldier.save();
     res.send(soldier);
   } catch (error) {
+    console.log(1);
+    console.log(error);
     res.status(STATUS_BAD_REQUEST).send({ error });
   }
 });

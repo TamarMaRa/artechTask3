@@ -16,20 +16,12 @@ const {
 router.post("", auth, requiredHead, async (req, res) => {
   const team = new Team(req.body);
 
-  //validate team head
-  if (team.head !== undefined) {
-    const teamHead = await Soldier.findById(req.body.head);
-    if (!teamHead) {
-      return res
-        .status(STATUS_BAD_REQUEST)
-        .send({ error: "Soldier does'nt exist" });
-    }
-  }
-
   try {
     await team.save();
     res.status(STATUS_CREATED).send(team);
   } catch (error) {
+    console.log(1);
+    console.log(error);
     res.status(STATUS_BAD_REQUEST).send({ error });
   }
 });
@@ -78,16 +70,6 @@ router.patch("/:id", auth, requiredHead, async (req, res) => {
 
     if (!team) {
       return res.status(STATUS_NOT_FOUND).send({ error: "Team not found" });
-    }
-
-    //validate team head update
-    if (updates.includes("head")) {
-      const teamHead = await Soldier.findById(req.body.head);
-      if (!teamHead) {
-        return res
-          .status(STATUS_BAD_REQUEST)
-          .send({ error: "Soldier does'nt exist" });
-      }
     }
 
     updates.forEach((update) => (team[update] = req.body[update]));
