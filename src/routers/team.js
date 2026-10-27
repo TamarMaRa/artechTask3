@@ -136,7 +136,7 @@ router.get("/soldiers/:id", auth, async (req, res) => {
   }
 });
 
-// //returns number of members in a team
+//returns number of members in a team
 router.get("/soldiers/count/:id", auth, async (req, res) => {
   const _id = req.params.id;
   try {

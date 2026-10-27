@@ -3,10 +3,8 @@ const validator = require("validator");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const Team = require("./team");
-
 require("dotenv").config();
 const bearer_token = process.env.BEARER_TOKEN;
-
 
 const soldierSchema = new mongoose.Schema({
   name: {
@@ -111,10 +109,10 @@ soldierSchema.pre("save", async function (next) {
     soldier.password = await bcrypt.hash(soldier.password, 8);
   }
 
-  if(soldier.isModified("team")) {
+  if (soldier.isModified("team")) {
     const team = await Team.findById(soldier.team);
-    if(!team) {
-      throw new Error("Team doesn't exists")
+    if (!team) {
+      throw new Error("Team doesn't exists");
     }
   }
   next();
